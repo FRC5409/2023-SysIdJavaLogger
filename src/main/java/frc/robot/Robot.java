@@ -5,14 +5,20 @@
 
 package frc.robot;
 
-import com.kauailabs.navx.frc.AHRS;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.RelativeEncoder;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.sensors.CANCoderConfiguration;
+import com.ctre.phoenix.sensors.SensorTimeBase;
+import com.ctre.phoenix.sensors.WPI_CANCoder;
+import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import frc.robot.Constants.kMotor;
+import frc.robot.Constants.kCANCoder;
+import frc.robot.Constants.kGyro;
 
 import java.util.ArrayList;
 
@@ -30,11 +36,26 @@ public class Robot extends TimedRobot {
         OTHER
     }
 
-    private final CANSparkMax leftLeader = new CANSparkMax(Constants.LEFT_TOP_PORT, MotorType.kBrushless);
-    private final CANSparkMax rightLeader = new CANSparkMax(Constants.RIGHT_TOP_PORT, MotorType.kBrushless);
-    private final RelativeEncoder leftEncoder = leftLeader.getEncoder();
-    private final RelativeEncoder rightEncoder = rightLeader.getEncoder();
-    private final AHRS gyro = new AHRS();
+    // private final CANSparkMax leftLeader = new CANSparkMax(Constants.LEFT_TOP_PORT, MotorType.kBrushless);
+    // private final CANSparkMax rightLeader = new CANSparkMax(Constants.RIGHT_TOP_PORT, MotorType.kBrushless);
+    // private final RelativeEncoder leftEncoder = leftLeader.getEncoder();
+    // private final RelativeEncoder rightEncoder = rightLeader.getEncoder();
+    // private final AHRS gyro = new AHRS();
+
+    private final WPI_TalonFX mot_leftFrontDrive = new WPI_TalonFX(kMotor.id_leftFrontDrive);
+    private final WPI_TalonFX mot_leftCentreDrive = new WPI_TalonFX(kMotor.id_leftCentreDrive);
+    private final WPI_TalonFX mot_leftRearDrive = new WPI_TalonFX(kMotor.id_leftRearDrive);
+
+    private final WPI_TalonFX mot_rightFrontDrive = new WPI_TalonFX(kMotor.id_rightFrontDrive);
+    private final WPI_TalonFX mot_rightCentreDrive = new WPI_TalonFX(kMotor.id_rightCentreDrive);
+    private final WPI_TalonFX mot_rightRearDrive = new WPI_TalonFX(kMotor.id_rightRearDrive);
+
+    private final WPI_CANCoder enc_leftDrive = new WPI_CANCoder(kCANCoder.id_leftEncoder);
+    private final WPI_CANCoder enc_rightDrive = new WPI_CANCoder(kCANCoder.id_rightEncoder);
+
+    private final CANCoderConfiguration enc_config = new CANCoderConfiguration();
+
+    private final WPI_Pigeon2 m_gyro = new WPI_Pigeon2(kGyro.id_gyro);
 
     private final ArrayList<Double> data = new ArrayList<>(Constants.DATA_VECTOR_SIZE);
     private double voltage = 0.0;
@@ -49,34 +70,38 @@ public class Robot extends TimedRobot {
 
     public Robot() {
         super(0.005);
-        CANSparkMax leftFront = new CANSparkMax(Constants.LEFT_FRONT_PORT, MotorType.kBrushless);
-        CANSparkMax leftBack = new CANSparkMax(Constants.LEFT_BACK_PORT, MotorType.kBrushless);
 
-        leftLeader.restoreFactoryDefaults();
-        leftFront.restoreFactoryDefaults();
-        leftBack.restoreFactoryDefaults();
+        mot_leftFrontDrive.configFactoryDefault();
+        mot_leftCentreDrive.configFactoryDefault();
+        mot_leftRearDrive.configFactoryDefault();
+        mot_rightFrontDrive.configFactoryDefault();
+        mot_rightCentreDrive.configFactoryDefault();
+        mot_rightRearDrive.configFactoryDefault();
 
-        leftLeader.setInverted(Constants.LEFT_INVERTED);
-        leftFront.follow(leftLeader);
-        leftBack.follow(leftLeader);
+        mot_leftFrontDrive.setInverted(kMotor.leftInverted);
+        mot_leftCentreDrive.setInverted(kMotor.leftInverted);
+        mot_leftRearDrive.setInverted(kMotor.leftInverted);
+        mot_rightFrontDrive.setInverted(kMotor.rightInverted);
+        mot_rightCentreDrive.setInverted(kMotor.rightInverted);
+        mot_rightRearDrive.setInverted(kMotor.rightInverted);
 
-        leftEncoder.setPositionConversionFactor(Constants.DISTANCE_PER_ROTATION);
-        leftEncoder.setVelocityConversionFactor(Constants.DISTANCE_PER_ROTATION / 60);
+        mot_leftCentreDrive.follow(mot_leftFrontDrive);
+        mot_leftRearDrive.follow(mot_leftFrontDrive);
+        mot_rightCentreDrive.follow(mot_rightFrontDrive);
+        mot_rightRearDrive.follow(mot_rightFrontDrive);
 
+        mot_leftFrontDrive.setNeutralMode(NeutralMode.Brake);
+        mot_leftCentreDrive.setNeutralMode(NeutralMode.Brake);
+        mot_leftRearDrive.setNeutralMode(NeutralMode.Brake);
+        mot_rightFrontDrive.setNeutralMode(NeutralMode.Brake);
+        mot_rightCentreDrive.setNeutralMode(NeutralMode.Brake);
+        mot_rightRearDrive.setNeutralMode(NeutralMode.Brake);
 
-        CANSparkMax rightFront = new CANSparkMax(Constants.RIGHT_FRONT_PORT, MotorType.kBrushless);
-        CANSparkMax rightBack = new CANSparkMax(Constants.RIGHT_BACK_PORT, MotorType.kBrushless);
-
-        rightLeader.restoreFactoryDefaults();
-        rightFront.restoreFactoryDefaults();
-        rightBack.restoreFactoryDefaults();
-
-        rightLeader.setInverted(Constants.RIGHT_INVERTED);
-        rightFront.follow(rightLeader);
-        rightBack.follow(rightLeader);
-
-        rightEncoder.setPositionConversionFactor(Constants.DISTANCE_PER_ROTATION);
-        rightEncoder.setVelocityConversionFactor(Constants.DISTANCE_PER_ROTATION / 60);
+        enc_config.sensorCoefficient = kCANCoder.enc_SensorCoefficient;
+        enc_config.unitString = kCANCoder.enc_UnitString;
+        enc_config.sensorTimeBase = SensorTimeBase.PerSecond;
+        enc_leftDrive.configAllSettings(enc_config);
+        enc_rightDrive.configAllSettings(enc_config);
 
         LiveWindow.disableAllTelemetry();
     }
@@ -86,7 +111,10 @@ public class Robot extends TimedRobot {
      * initialization code.
      */
     @Override
-    public void robotInit() {}
+    public void robotInit() {
+        SmartDashboard.putString("SysIdTestType", "Quasistatic");
+        SmartDashboard.putNumber("SysIdVoltageCommand", 0);
+    }
     
     
     /**
@@ -132,10 +160,10 @@ public class Robot extends TimedRobot {
     /** This method is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-        logData(leftEncoder.getPosition(), rightEncoder.getPosition(), leftEncoder.getVelocity(), rightEncoder.getVelocity(), Math.toRadians(gyro.getAngle()), Math.toRadians(gyro.getRate()));
+        logData(-enc_leftDrive.getPosition(), enc_rightDrive.getPosition(), -enc_leftDrive.getVelocity(), enc_rightDrive.getVelocity(), Math.toRadians(m_gyro.getAngle()), Math.toRadians(m_gyro.getRate()));
 
-        leftLeader.setVoltage(leftVoltage);
-        rightLeader.setVoltage(rightVoltage);
+        mot_leftFrontDrive.setVoltage(leftVoltage);
+        mot_rightFrontDrive.setVoltage(rightVoltage);
     }
 
 
@@ -154,8 +182,8 @@ public class Robot extends TimedRobot {
     /** This method is called once when the robot is disabled. */
     @Override
     public void disabledInit() {
-        leftLeader.setVoltage(0.0);
-        rightLeader.setVoltage(0.0);
+        mot_leftFrontDrive.setVoltage(0.0);
+        mot_rightFrontDrive.setVoltage(0.0);
         sendData();
     }
 
@@ -225,11 +253,11 @@ public class Robot extends TimedRobot {
     }
 
     private void pushNTDiagnostics() {
-        SmartDashboard.putNumber("Left Position", leftEncoder.getPosition());
-        SmartDashboard.putNumber("Right Position", rightEncoder.getPosition());
-        SmartDashboard.putNumber("Left Velocity", leftEncoder.getVelocity());
-        SmartDashboard.putNumber("Right Velocity", rightEncoder.getVelocity());
-        SmartDashboard.putNumber("Gyro Reading", Math.toRadians(gyro.getAngle()));
-        SmartDashboard.putNumber("Gyro Rate", Math.toRadians(gyro.getRate()));
+        SmartDashboard.putNumber("Left Position", -enc_leftDrive.getPosition());
+        SmartDashboard.putNumber("Right Position", enc_rightDrive.getPosition());
+        SmartDashboard.putNumber("Left Velocity", -enc_leftDrive.getVelocity());
+        SmartDashboard.putNumber("Right Velocity", enc_rightDrive.getVelocity());
+        SmartDashboard.putNumber("Gyro Reading", Math.toRadians(m_gyro.getAngle()));
+        SmartDashboard.putNumber("Gyro Rate", Math.toRadians(m_gyro.getRate()));
     }
 }
