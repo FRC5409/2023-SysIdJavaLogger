@@ -5,12 +5,14 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.ctre.phoenix.sensors.WPI_CANCoder;
-import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import com.ctre.phoenix.sensors.WPI_PigeonIMU;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -42,20 +44,17 @@ public class Robot extends TimedRobot {
     // private final RelativeEncoder rightEncoder = rightLeader.getEncoder();
     // private final AHRS gyro = new AHRS();
 
-    private final WPI_TalonFX mot_leftFrontDrive = new WPI_TalonFX(kMotor.id_leftFrontDrive);
-    private final WPI_TalonFX mot_leftCentreDrive = new WPI_TalonFX(kMotor.id_leftCentreDrive);
-    private final WPI_TalonFX mot_leftRearDrive = new WPI_TalonFX(kMotor.id_leftRearDrive);
-
-    private final WPI_TalonFX mot_rightFrontDrive = new WPI_TalonFX(kMotor.id_rightFrontDrive);
-    private final WPI_TalonFX mot_rightCentreDrive = new WPI_TalonFX(kMotor.id_rightCentreDrive);
-    private final WPI_TalonFX mot_rightRearDrive = new WPI_TalonFX(kMotor.id_rightRearDrive);
+    private final CANSparkMax mot_leftFrontDrive = new CANSparkMax(kMotor.id_leftFrontDrive, MotorType.kBrushless);
+    private final CANSparkMax mot_leftRearDrive = new CANSparkMax(kMotor.id_leftRearDrive, MotorType.kBrushless);
+    private final CANSparkMax mot_rightFrontDrive = new CANSparkMax(kMotor.id_rightFrontDrive, MotorType.kBrushless);
+    private final CANSparkMax mot_rightRearDrive = new CANSparkMax(kMotor.id_rightRearDrive, MotorType.kBrushless);
 
     private final WPI_CANCoder enc_leftDrive = new WPI_CANCoder(kCANCoder.id_leftEncoder);
     private final WPI_CANCoder enc_rightDrive = new WPI_CANCoder(kCANCoder.id_rightEncoder);
 
     private final CANCoderConfiguration enc_config = new CANCoderConfiguration();
 
-    private final WPI_Pigeon2 m_gyro = new WPI_Pigeon2(kGyro.id_gyro);
+    private final WPI_PigeonIMU m_gyro = new WPI_PigeonIMU(kGyro.id_gyro);
 
     private final ArrayList<Double> data = new ArrayList<>(Constants.DATA_VECTOR_SIZE);
     private double voltage = 0.0;
@@ -71,31 +70,23 @@ public class Robot extends TimedRobot {
     public Robot() {
         super(0.005);
 
-        mot_leftFrontDrive.configFactoryDefault();
-        mot_leftCentreDrive.configFactoryDefault();
-        mot_leftRearDrive.configFactoryDefault();
-        mot_rightFrontDrive.configFactoryDefault();
-        mot_rightCentreDrive.configFactoryDefault();
-        mot_rightRearDrive.configFactoryDefault();
+        mot_leftFrontDrive.restoreFactoryDefaults();
+        mot_leftRearDrive.restoreFactoryDefaults();
+        mot_rightFrontDrive.restoreFactoryDefaults();
+        mot_rightRearDrive.restoreFactoryDefaults();
 
         mot_leftFrontDrive.setInverted(kMotor.leftInverted);
-        mot_leftCentreDrive.setInverted(kMotor.leftInverted);
         mot_leftRearDrive.setInverted(kMotor.leftInverted);
         mot_rightFrontDrive.setInverted(kMotor.rightInverted);
-        mot_rightCentreDrive.setInverted(kMotor.rightInverted);
         mot_rightRearDrive.setInverted(kMotor.rightInverted);
 
-        mot_leftCentreDrive.follow(mot_leftFrontDrive);
         mot_leftRearDrive.follow(mot_leftFrontDrive);
-        mot_rightCentreDrive.follow(mot_rightFrontDrive);
         mot_rightRearDrive.follow(mot_rightFrontDrive);
 
-        mot_leftFrontDrive.setNeutralMode(NeutralMode.Brake);
-        mot_leftCentreDrive.setNeutralMode(NeutralMode.Brake);
-        mot_leftRearDrive.setNeutralMode(NeutralMode.Brake);
-        mot_rightFrontDrive.setNeutralMode(NeutralMode.Brake);
-        mot_rightCentreDrive.setNeutralMode(NeutralMode.Brake);
-        mot_rightRearDrive.setNeutralMode(NeutralMode.Brake);
+        mot_leftFrontDrive.setIdleMode(IdleMode.kBrake);
+        mot_leftRearDrive.setIdleMode(IdleMode.kBrake);
+        mot_rightFrontDrive.setIdleMode(IdleMode.kBrake);
+        mot_rightRearDrive.setIdleMode(IdleMode.kBrake);
 
         enc_config.sensorCoefficient = kCANCoder.enc_SensorCoefficient;
         enc_config.unitString = kCANCoder.enc_UnitString;
