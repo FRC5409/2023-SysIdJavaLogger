@@ -103,6 +103,7 @@ public class Robot extends TimedRobot {
         enc_leftDrive.configAllSettings(enc_config);
         enc_rightDrive.configAllSettings(enc_config);
 
+        m_gyro.configMountPose(kGyro.mountPoseForward, kGyro.mountPoseUp);
         LiveWindow.disableAllTelemetry();
     }
 

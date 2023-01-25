@@ -1,5 +1,7 @@
 package frc.robot;
 
+import com.ctre.phoenix.sensors.Pigeon2.AxisDirection;
+
 public class Constants {
 
     public static final int DATA_VECTOR_SIZE = 36000;
@@ -39,5 +41,8 @@ public class Constants {
 
     public static final class kGyro {
         public static final int id_gyro                     = 10;
+
+        public static final AxisDirection mountPoseForward  = AxisDirection.NegativeY;
+        public static final AxisDirection mountPoseUp       = AxisDirection.PositiveZ;
     }
 }
